@@ -8,14 +8,15 @@ import {
   Cell, PieChart, Pie, Legend, ComposedChart,
 } from "recharts";
 
+// âââ Helpers âââ
 const fmt = (n: number) => n < 0
-  ? `(\$${Math.abs(n).toLocaleString("en-US", { maximumFractionDigits: 0 })})`
-  : `\$${n.toLocaleString("en-US", { maximumFractionDigits: 0 })}`;
+  ? `($${Math.abs(n).toLocaleString("en-US", { maximumFractionDigits: 0 })})`
+  : `$${n.toLocaleString("en-US", { maximumFractionDigits: 0 })}`;
 
 const fmtK = (n: number) => {
-  if (Math.abs(n) >= 1_000_000) return `\$${(n / 1_000_000).toFixed(1)}M`;
-  if (Math.abs(n) >= 1_000) return `\$${(n / 1_000).toFixed(0)}K`;
-  return `\$${n.toFixed(0)}`;
+  if (Math.abs(n) >= 1_000_000) return `$${(n / 1_000_000).toFixed(1)}M`;
+  if (Math.abs(n) >= 1_000) return `$${(n / 1_000).toFixed(0)}K`;
+  return `$${n.toFixed(0)}`;
 };
 
 const fmtNum = (n: number) => n.toLocaleString("en-US", { maximumFractionDigits: 0 });
@@ -24,13 +25,14 @@ const fmtPct = (n: number) => `${(n * 100).toFixed(1)}%`;
 const COLORS = ["#4f46e5", "#10b981", "#f59e0b", "#ef4444", "#8b5cf6", "#06b6d4"];
 
 const NAV_ITEMS = [
-  { id: "overview", label: "Overview", icon: "\u{1F4CA}" },
-  { id: "pnl", label: "P&L Analysis", icon: "\u{1F4B0}" },
-  { id: "cashflow", label: "Cash Flow", icon: "\u{1F4C8}" },
-  { id: "retention", label: "Retention", icon: "\u{1F504}" },
-  { id: "costs", label: "Cost Analysis", icon: "\u{1F4CB}" },
+  { id: "overview", label: "Overview", icon: "ð" },
+  { id: "pnl", label: "P&L Analysis", icon: "ð°" },
+  { id: "cashflow", label: "Cash Flow", icon: "ð" },
+  { id: "retention", label: "Retention", icon: "ð" },
+  { id: "costs", label: "Cost Analysis", icon: "ð" },
 ];
 
+// âââ KPI Card âââ
 function KpiCard({ label, value, sub, trend, color = "indigo" }: {
   label: string; value: string; sub?: string; trend?: string;
   color?: "indigo" | "emerald" | "amber" | "red";
@@ -60,6 +62,7 @@ function KpiCard({ label, value, sub, trend, color = "indigo" }: {
   );
 }
 
+// âââ Chart Card âââ
 function ChartCard({ title, subtitle, children, className = "" }: {
   title: string; subtitle?: string; children: React.ReactNode; className?: string;
 }) {
@@ -74,6 +77,7 @@ function ChartCard({ title, subtitle, children, className = "" }: {
   );
 }
 
+// âââ Custom Tooltip âââ
 function CustomTooltip({ active, payload, label }: any) {
   if (!active || !payload?.length) return null;
   return (
@@ -94,15 +98,16 @@ function CustomTooltip({ active, payload, label }: any) {
   );
 }
 
+// âââ Driver Input Row âââ
 function DriverInput({ label, value, onChange, unit, step = 1, min = 0, max }: {
   label: string; value: number; onChange: (v: number) => void;
-  unit?: "\u{0024}" | "%"; step?: number; min?: number; max?: number;
+  unit?: "$" | "%"; step?: number; min?: number; max?: number;
 }) {
   return (
     <div className="flex items-center justify-between py-1.5 border-b border-white/5">
       <label className="text-xs text-gray-400 flex-1">{label}</label>
       <div className="flex items-center gap-1">
-        {unit === "\u{0024}" && <span className="text-xs text-gray-500">$</span>}
+        {unit === "$" && <span className="text-xs text-gray-500">$</span>}
         <input
           type="number" value={value} min={min} max={max} step={step}
           onChange={e => onChange(Number(e.target.value))}
@@ -122,6 +127,7 @@ function DriverSection({ label }: { label: string }) {
   );
 }
 
+// âââ MAIN DASHBOARD âââ
 export default function Dashboard() {
   const [activeNav, setActiveNav] = useState("overview");
   const [assumptions, setAssumptions] = useState<Assumptions>(DEFAULT_ASSUMPTIONS);
@@ -142,18 +148,30 @@ export default function Dashboard() {
   const M = useMemo(() => computeModel(assumptions), [assumptions]);
   const A = assumptions;
 
+  // Time series for charts
   const timeSeries = useMemo(() => M.months.map((month, i) => ({
-    month, revenue: M.totalRevenue[i], costs: M.totalCosts[i], pnl: M.monthlyPnL[i],
-    cumulativePnl: M.cumulativePnL[i], subscribers: M.totalActiveSubs[i],
-    newCustomers: M.totalNewCustomers[i], margin: M.margin[i],
+    month,
+    revenue: M.totalRevenue[i],
+    costs: M.totalCosts[i],
+    pnl: M.monthlyPnL[i],
+    cumulativePnl: M.cumulativePnL[i],
+    subscribers: M.totalActiveSubs[i],
+    newCustomers: M.totalNewCustomers[i],
+    margin: M.margin[i],
   })), [M]);
 
-  const quarterlyData = [0,3,6,9,12,15,18,21,24,27,30,33].map(i => ({
-    month: M.months[i]||"", revenue: M.totalRevenue[i]||0, costs: M.totalCosts[i]||0,
-    pnl: M.monthlyPnL[i]||0, cumPnl: M.cumulativePnL[i]||0, subs: M.totalActiveSubs[i]||0,
-    margin: M.margin[i]||0,
+  // Quarterly for P&L table
+  const quarterlyData = [0, 3, 6, 9, 12, 15, 18, 21, 24, 27, 30, 33].map(i => ({
+    month: M.months[i] || "",
+    revenue: M.totalRevenue[i] || 0,
+    costs: M.totalCosts[i] || 0,
+    pnl: M.monthlyPnL[i] || 0,
+    cumPnl: M.cumulativePnL[i] || 0,
+    subs: M.totalActiveSubs[i] || 0,
+    margin: M.margin[i] || 0,
   })).filter(d => d.month);
 
+  // Cost breakdown at steady state
   const ss = Math.min(18, M.numMonths - 1);
   const costBreakdown = [
     { name: 'COGS', value: M.cogsCost[ss] },
@@ -166,6 +184,7 @@ export default function Dashboard() {
 
   return (
     <div className="flex h-screen overflow-hidden">
+      {/* âââ Sidebar âââ */}
       <aside className={`${showDrivers ? "w-[300px]" : "w-64"} bg-[#1a1d23] text-gray-400 flex flex-col shrink-0 transition-all duration-200`}>
         <div className="px-5 py-5">
           <div className="flex items-center gap-3">
@@ -179,27 +198,38 @@ export default function Dashboard() {
           </div>
         </div>
 
+        {/* Nav */}
         <nav className="px-3">
           {NAV_ITEMS.map(item => (
-            <button key={item.id} onClick={() => setActiveNav(item.id)}
+            <button
+              key={item.id}
+              onClick={() => setActiveNav(item.id)}
               className={`w-full flex items-center gap-3 px-4 py-2.5 rounded-xl text-sm font-medium transition-all mb-1 ${
-                activeNav === item.id ? "bg-white/10 text-white" : "hover:bg-white/5 hover:text-gray-300"
-              }`}>
-              <span className="text-base">{item.icon}</span>{item.label}
+                activeNav === item.id
+                  ? "bg-white/10 text-white"
+                  : "hover:bg-white/5 hover:text-gray-300"
+              }`}
+            >
+              <span className="text-base">{item.icon}</span>
+              {item.label}
             </button>
           ))}
         </nav>
 
+        {/* Drivers Toggle */}
         <div className="px-3 mt-2">
-          <button onClick={() => setShowDrivers(!showDrivers)}
+          <button
+            onClick={() => setShowDrivers(!showDrivers)}
             className={`w-full flex items-center justify-between px-4 py-2.5 rounded-xl text-sm font-semibold transition-all ${
               showDrivers ? "bg-indigo-600 text-white" : "bg-indigo-600/20 text-indigo-300 hover:bg-indigo-600/30"
-            }`}>
-            <span>\u{2699}\u{FE0F} Model Drivers</span>
-            <span className="text-base">{showDrivers ? "\u25BE" : "\u25B8"}</span>
+            }`}
+          >
+            <span>âï¸ Model Drivers</span>
+            <span className="text-base">{showDrivers ? "â¾" : "â¸"}</span>
           </button>
         </div>
 
+        {/* âââ DRIVERS PANEL âââ */}
         {showDrivers && (
           <div className="flex-1 overflow-y-auto px-4 pb-4 mt-1">
             <DriverSection label="Acquisition" />
@@ -210,40 +240,44 @@ export default function Dashboard() {
             <DriverInput label="Acq. Duration (mo)" value={A.acqMonths} onChange={v => set("acqMonths", v)} min={1} max={36} />
 
             <DriverSection label="Pricing" />
-            <DriverInput label="Month 1 Price" unit="\u{0024}" value={A.month1Price} onChange={v => set("month1Price", v)} />
-            <DriverInput label="Month 2+ Price" unit="\u{0024}" value={A.month2Price} onChange={v => set("month2Price", v)} />
+            <DriverInput label="Month 1 Price" unit="$" value={A.month1Price} onChange={v => set("month1Price", v)} />
+            <DriverInput label="Month 2+ Price" unit="$" value={A.month2Price} onChange={v => set("month2Price", v)} />
 
             <DriverSection label="Unit Costs" />
-            <DriverInput label="CAC" unit="\u{0024}" value={A.cac} onChange={v => set("cac", v)} />
-            <DriverInput label="COGS" unit="\u{0024}" value={A.cogs} onChange={v => set("cogs", v)} />
-            <DriverInput label="Dr Visit" unit="\u{0024}" value={A.drVisit} onChange={v => set("drVisit", v)} step={0.5} />
+            <DriverInput label="CAC" unit="$" value={A.cac} onChange={v => set("cac", v)} />
+            <DriverInput label="COGS" unit="$" value={A.cogs} onChange={v => set("cogs", v)} />
+            <DriverInput label="Dr Visit" unit="$" value={A.drVisit} onChange={v => set("drVisit", v)} step={0.5} />
             <DriverInput label="Merchant Fee" unit="%" value={A.merchantPct} onChange={v => set("merchantPct", v)} step={0.1} />
             <DriverInput label="Chargeback" unit="%" value={A.cbPct} onChange={v => set("cbPct", v)} step={0.1} />
-            <DriverInput label="Monthly OpEx" unit="\u{0024}" value={A.monthlyOpex} onChange={v => set("monthlyOpex", v)} step={500} />
+            <DriverInput label="Monthly OpEx" unit="$" value={A.monthlyOpex} onChange={v => set("monthlyOpex", v)} step={500} />
 
             <DriverSection label="Cumulative Retention %" />
             {A.ret.map((r, i) => (
               <DriverInput key={i} label={`Cycle ${i + 1}`} unit="%" value={r} onChange={v => setRet(i, v)} max={100} />
             ))}
 
-            <button onClick={() => setAssumptions(DEFAULT_ASSUMPTIONS)}
-              className="w-full mt-4 py-2 rounded-xl border border-white/15 text-gray-400 text-xs font-semibold hover:bg-white/5 transition-colors">
+            <button
+              onClick={() => setAssumptions(DEFAULT_ASSUMPTIONS)}
+              className="w-full mt-4 py-2 rounded-xl border border-white/15 text-gray-400 text-xs font-semibold hover:bg-white/5 transition-colors"
+            >
               Reset to Defaults
             </button>
           </div>
         )}
 
+        {/* Bottom LTV card */}
         {!showDrivers && (
           <div className="mt-auto px-4 py-5 border-t border-white/10">
             <div className="bg-indigo-600/20 rounded-xl px-4 py-3">
               <p className="text-indigo-300 text-xs font-medium">LTV : CAC</p>
               <p className="text-white text-xl font-bold mt-0.5">{M.ltvCac.toFixed(2)}x</p>
-              <p className="text-indigo-300/60 text-xs mt-1">LTV \${M.ltv.toFixed(0)} \u{00B7} CAC \${A.cac}</p>
+              <p className="text-indigo-300/60 text-xs mt-1">LTV ${M.ltv.toFixed(0)} Â· CAC ${A.cac}</p>
             </div>
           </div>
         )}
       </aside>
 
+      {/* âââ Main Content âââ */}
       <main className="flex-1 overflow-y-auto bg-[#f8f9fb]">
         <header className="bg-white border-b border-gray-100 px-8 py-5 sticky top-0 z-10">
           <div className="flex items-center justify-between">
@@ -251,22 +285,23 @@ export default function Dashboard() {
               <h2 className="text-lg font-semibold text-gray-900">
                 {NAV_ITEMS.find(n => n.id === activeNav)?.label || "Overview"}
               </h2>
-              <p className="text-sm text-gray-500 mt-0.5">{A.acqMonths}-month acquisition model \u{00B7} {M.numMonths} month timeline</p>
+              <p className="text-sm text-gray-500 mt-0.5">{A.acqMonths}-month acquisition model Â· {M.numMonths} month timeline</p>
             </div>
             <span className="text-xs text-gray-500 bg-gray-100 px-3 py-1.5 rounded-lg font-medium">
-              {M.numCohorts} cohorts \u{00B7} {M.numMonths} months
+              {M.numCohorts} cohorts Â· {M.numMonths} months
             </span>
           </div>
         </header>
 
         <div className="px-8 py-6 space-y-6">
+          {/* âââ OVERVIEW âââ */}
           {activeNav === "overview" && (
             <>
               <div className="grid grid-cols-5 gap-4">
                 <KpiCard label="Total Acquired" value={fmtNum(M.totalAcquired)} sub={`${A.acqMonths} months`} color="indigo" />
                 <KpiCard label="Peak Revenue" value={fmtK(M.peakRevenue)} sub="/month" trend="Steady state" color="emerald" />
                 <KpiCard label="Peak Subscribers" value={fmtNum(M.peakSubs)} sub="active" color="indigo" />
-                <KpiCard label="Customer LTV" value={`\$${M.ltv.toFixed(0)}`} sub="8 cycles" trend={`${M.ltvCac.toFixed(2)}x CAC`} color="emerald" />
+                <KpiCard label="Customer LTV" value={`$${M.ltv.toFixed(0)}`} sub="8 cycles" trend={`${M.ltvCac.toFixed(2)}x CAC`} color="emerald" />
                 <KpiCard label="Cumulative P&L" value={fmtK(M.endCumulativePnL)} sub="end of model" color={M.endCumulativePnL >= 0 ? "emerald" : "red"} />
               </div>
 
@@ -274,10 +309,12 @@ export default function Dashboard() {
                 <ChartCard title="Revenue Over Time" subtitle="Monthly gross revenue across all cohorts">
                   <ResponsiveContainer width="100%" height={280}>
                     <AreaChart data={timeSeries}>
-                      <defs><linearGradient id="revGrad" x1="0" y1="0" x2="0" y2="1">
-                        <stop offset="0%" stopColor="#4f46e5" stopOpacity={0.15} />
-                        <stop offset="100%" stopColor="#4f46e5" stopOpacity={0} />
-                      </linearGradient></defs>
+                      <defs>
+                        <linearGradient id="revGrad" x1="0" y1="0" x2="0" y2="1">
+                          <stop offset="0%" stopColor="#4f46e5" stopOpacity={0.15} />
+                          <stop offset="100%" stopColor="#4f46e5" stopOpacity={0} />
+                        </linearGradient>
+                      </defs>
                       <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
                       <XAxis dataKey="month" tick={{ fontSize: 10 }} interval={4} stroke="#9ca3af" />
                       <YAxis tickFormatter={fmtK} tick={{ fontSize: 10 }} stroke="#9ca3af" />
@@ -290,10 +327,12 @@ export default function Dashboard() {
                 <ChartCard title="Active Subscribers" subtitle="Total subscribers across all cohorts">
                   <ResponsiveContainer width="100%" height={280}>
                     <AreaChart data={timeSeries}>
-                      <defs><linearGradient id="subGrad" x1="0" y1="0" x2="0" y2="1">
-                        <stop offset="0%" stopColor="#10b981" stopOpacity={0.15} />
-                        <stop offset="100%" stopColor="#10b981" stopOpacity={0} />
-                      </linearGradient></defs>
+                      <defs>
+                        <linearGradient id="subGrad" x1="0" y1="0" x2="0" y2="1">
+                          <stop offset="0%" stopColor="#10b981" stopOpacity={0.15} />
+                          <stop offset="100%" stopColor="#10b981" stopOpacity={0} />
+                        </linearGradient>
+                      </defs>
                       <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
                       <XAxis dataKey="month" tick={{ fontSize: 10 }} interval={4} stroke="#9ca3af" />
                       <YAxis tickFormatter={fmtNum} tick={{ fontSize: 10 }} stroke="#9ca3af" />
@@ -337,6 +376,7 @@ export default function Dashboard() {
             </>
           )}
 
+          {/* âââ P&L âââ */}
           {activeNav === "pnl" && (
             <>
               <div className="grid grid-cols-4 gap-4">
@@ -386,7 +426,7 @@ export default function Dashboard() {
                   <table className="w-full text-sm">
                     <thead>
                       <tr className="border-b border-gray-100">
-                        {["Month","Subscribers","Revenue","Costs","P&L","Cumulative","Margin"].map(h => (
+                        {["Month", "Subscribers", "Revenue", "Costs", "P&L", "Cumulative", "Margin"].map(h => (
                           <th key={h} className={`${h === "Month" ? "text-left" : "text-right"} py-2.5 px-3 text-xs font-medium text-gray-500 uppercase tracking-wider`}>{h}</th>
                         ))}
                       </tr>
@@ -410,6 +450,7 @@ export default function Dashboard() {
             </>
           )}
 
+          {/* âââ CASH FLOW âââ */}
           {activeNav === "cashflow" && (
             <>
               <div className="grid grid-cols-3 gap-4">
@@ -449,23 +490,26 @@ export default function Dashboard() {
             </>
           )}
 
+          {/* âââ RETENTION âââ */}
           {activeNav === "retention" && (
             <>
               <div className="grid grid-cols-4 gap-4">
                 <KpiCard label="Cycle 1 Retention" value={`${A.ret[0]}%`} sub="of original" color="emerald" />
                 <KpiCard label="Cycle 3 Retention" value={`${A.ret[2]}%`} sub="of original" color="amber" />
                 <KpiCard label="Cycle 7 Retention" value={`${A.ret[6]}%`} sub="of original" color="red" />
-                <KpiCard label="LTV" value={`\$${M.ltv.toFixed(0)}`} trend={`${M.ltvCac.toFixed(2)}x CAC`} color="emerald" />
+                <KpiCard label="LTV" value={`$${M.ltv.toFixed(0)}`} trend={`${M.ltvCac.toFixed(2)}x CAC`} color="emerald" />
               </div>
 
               <div className="grid grid-cols-2 gap-6">
                 <ChartCard title="Cumulative Retention Curve" subtitle="% of original cohort still active at each cycle">
                   <ResponsiveContainer width="100%" height={300}>
                     <AreaChart data={M.retentionData}>
-                      <defs><linearGradient id="retGrad" x1="0" y1="0" x2="0" y2="1">
-                        <stop offset="0%" stopColor="#4f46e5" stopOpacity={0.2} />
-                        <stop offset="100%" stopColor="#4f46e5" stopOpacity={0} />
-                      </linearGradient></defs>
+                      <defs>
+                        <linearGradient id="retGrad" x1="0" y1="0" x2="0" y2="1">
+                          <stop offset="0%" stopColor="#4f46e5" stopOpacity={0.2} />
+                          <stop offset="100%" stopColor="#4f46e5" stopOpacity={0} />
+                        </linearGradient>
+                      </defs>
                       <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
                       <XAxis dataKey="cycle" tick={{ fontSize: 10 }} stroke="#9ca3af" />
                       <YAxis tickFormatter={(v: number) => `${(v * 100).toFixed(0)}%`} tick={{ fontSize: 10 }} stroke="#9ca3af" />
@@ -494,7 +538,7 @@ export default function Dashboard() {
                   <table className="w-full text-sm">
                     <thead>
                       <tr className="border-b border-gray-100">
-                        {["Cycle","Retention","Price","Expected Rev","Cumulative LTV"].map(h => (
+                        {["Cycle", "Retention", "Price", "Expected Rev", "Cumulative LTV"].map(h => (
                           <th key={h} className={`${h === "Cycle" ? "text-left" : "text-right"} py-2.5 px-3 text-xs font-medium text-gray-500 uppercase tracking-wider`}>{h}</th>
                         ))}
                       </tr>
@@ -510,9 +554,9 @@ export default function Dashboard() {
                           <tr key={i} className="border-b border-gray-50 hover:bg-gray-50/50">
                             <td className="py-2.5 px-3 font-medium text-gray-900">{d.cycle}</td>
                             <td className="py-2.5 px-3 text-right text-gray-700">{fmtPct(d.cumulative)}</td>
-                            <td className="py-2.5 px-3 text-right text-gray-700">\${price}</td>
-                            <td className="py-2.5 px-3 text-right text-gray-700">\${expectedRev.toFixed(2)}</td>
-                            <td className="py-2.5 px-3 text-right font-medium text-indigo-600">\${cumulativeLtv.toFixed(2)}</td>
+                            <td className="py-2.5 px-3 text-right text-gray-700">${price}</td>
+                            <td className="py-2.5 px-3 text-right text-gray-700">${expectedRev.toFixed(2)}</td>
+                            <td className="py-2.5 px-3 text-right font-medium text-indigo-600">${cumulativeLtv.toFixed(2)}</td>
                           </tr>
                         );
                       })}
@@ -523,11 +567,12 @@ export default function Dashboard() {
             </>
           )}
 
+          {/* âââ COSTS âââ */}
           {activeNav === "costs" && (
             <>
               <div className="grid grid-cols-3 gap-4">
-                <KpiCard label="CAC" value={`\$${A.cac}`} sub="per customer" color="indigo" />
-                <KpiCard label="COGS" value={`\$${A.cogs}`} sub="per shipment" color="amber" />
+                <KpiCard label="CAC" value={`$${A.cac}`} sub="per customer" color="indigo" />
+                <KpiCard label="COGS" value={`$${A.cogs}`} sub="per shipment" color="amber" />
                 <KpiCard label="Monthly OpEx" value={fmtK(A.monthlyOpex)} sub="fixed" color="red" />
               </div>
 
@@ -535,9 +580,12 @@ export default function Dashboard() {
                 <ChartCard title="Steady-State Cost Breakdown" subtitle={`Monthly costs at steady state (${M.months[ss]})`}>
                   <ResponsiveContainer width="100%" height={300}>
                     <PieChart>
-                      <Pie data={costBreakdown} cx="50%" cy="50%"
+                      <Pie
+                        data={costBreakdown}
+                        cx="50%" cy="50%"
                         innerRadius={70} outerRadius={120}
-                        paddingAngle={3} dataKey="value" nameKey="name">
+                        paddingAngle={3} dataKey="value" nameKey="name"
+                      >
                         {costBreakdown.map((_, i) => (
                           <Cell key={i} fill={COLORS[i]} />
                         ))}
@@ -582,11 +630,11 @@ export default function Dashboard() {
                       <h4 className="text-xs font-medium text-gray-500 uppercase tracking-wider mb-3">{title}</h4>
                       <div className="space-y-2.5">
                         {[
-                          { label: "Price", value: `\$${price}` },
-                          { label: "COGS", value: `-\$${A.cogs}` },
-                          { label: "Dr Visit", value: `-\$${A.drVisit}` },
-                          { label: `Merchant (${A.merchantPct}%)`, value: `-\$${(price * A.merchantPct / 100).toFixed(2)}` },
-                          { label: `CB (${A.cbPct}%)`, value: `-\$${(price * A.cbPct / 100).toFixed(2)}` },
+                          { label: "Price", value: `$${price}` },
+                          { label: "COGS", value: `-$${A.cogs}` },
+                          { label: "Dr Visit", value: `-$${A.drVisit}` },
+                          { label: `Merchant (${A.merchantPct}%)`, value: `-$${(price * A.merchantPct / 100).toFixed(2)}` },
+                          { label: `CB (${A.cbPct}%)`, value: `-$${(price * A.cbPct / 100).toFixed(2)}` },
                         ].map((item, i) => (
                           <div key={i} className="flex justify-between py-1 border-b border-gray-50">
                             <span className="text-sm text-gray-600">{item.label}</span>
@@ -596,7 +644,7 @@ export default function Dashboard() {
                         <div className="flex justify-between py-1.5 border-t-2 border-gray-200">
                           <span className="text-sm font-semibold text-gray-900">Net Revenue</span>
                           <span className="text-sm font-bold text-emerald-600">
-                            \${(price - A.cogs - A.drVisit - price * (A.merchantPct + A.cbPct) / 100).toFixed(2)}
+                            ${(price - A.cogs - A.drVisit - price * (A.merchantPct + A.cbPct) / 100).toFixed(2)}
                           </span>
                         </div>
                       </div>
